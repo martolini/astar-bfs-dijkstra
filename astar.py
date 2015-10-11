@@ -1,15 +1,18 @@
+"""
+Run with python astar.py <board filename> <algorithm>
+"""
+
 import os
 import sys
 import time
 
-
-STEP_TIME = 0.02
+ANIMATION_STEP_TIME = 0.02
 EXPLORED_CELL = 'X'
 RETRACED_PATH_CELL = 'O'
 OPENED_CELL = '*'
 
 
-class Node(object):
+class BaseNode(object):
     board = None
     goal = None
     openset = {}
@@ -83,7 +86,7 @@ class Node(object):
         while parent is not None:
             self.board[parent.y][parent.x] = RETRACED_PATH_CELL
             print_board(self.board)
-            time.sleep(STEP_TIME)
+            time.sleep(ANIMATION_STEP_TIME)
             parent = parent.parent
 
     def __str__(self):
@@ -107,15 +110,15 @@ class UnknownCellException(Exception):
     pass
 
 
-class StandardNode(Node):
-
+class StandardNode(BaseNode):
+    """ Standard A star without movement costs """
     @property
     def move_cost(self):
         return 0
 
 
-class CellCostNode(Node):
-
+class CellCostNode(BaseNode):
+    """ Standard A star with movement cost """
     @property
     def move_cost(self):
         if self.val == 'w':
@@ -134,7 +137,8 @@ class CellCostNode(Node):
                                    .format(self.val))
 
 
-class StandardDijkstraNode(Node):
+class StandardDijkstraNode(BaseNode):
+    """ Dijkstra without movement cost """
 
     @property
     def move_cost(self):
@@ -145,7 +149,8 @@ class StandardDijkstraNode(Node):
         return self.g_value
 
 
-class StandardBFSNode(Node):
+class StandardBFSNode(BaseNode):
+    """ BFS without movement cost """
     openset = []
 
     @property
@@ -165,6 +170,7 @@ class StandardBFSNode(Node):
 
 
 class CellCostBFSNode(CellCostNode):
+    """ BFS with cell cost """
     openset = []
 
     @classmethod
@@ -180,7 +186,7 @@ class CellCostBFSNode(CellCostNode):
 
 
 class CellCostDijkstraNode(CellCostNode):
-
+    """ Dijkstra with cell cost """
     @property
     def f_value(self):
         return self.g_value
@@ -205,63 +211,66 @@ def print_board(board):
         print
 
 
-def find_node(board, val, Nodetype):
+def find_node(board, val, Node):
     for y, row in enumerate(board):
         for x, node in enumerate(row):
             if node == val:
-                return Nodetype(x, y)
+                return Node(x, y)
     return -1, -1
 
 
-def astar(board, Nodetype):
-    Nodetype.goal = find_node(board, 'B', Nodetype)
-    start = find_node(board, 'A', Nodetype)
+def astar(board, Node):
+    Node.goal = find_node(board, 'B', Node)
+    start = find_node(board, 'A', Node)
     start.open()
     while True:
         print_board(board)
-        current = Nodetype.get_next_node()
-        if current == Nodetype.goal:
+        current = Node.get_next_node()
+        if current == Node.goal:
             current.close()
             current.animate_path()
             return
         for child in current.children:
-            if child not in Nodetype.closedset:
-                if child not in Nodetype.openset:
+            if child not in Node.closedset:
+                if child not in Node.openset:
                     child.open()
-            other = Nodetype.get_similar(child)
+            other = Node.get_similar(child)
             if other is not None and other.parent is not None:
                 if current.f_value < other.parent.f_value:
                     other.parent = current
 
         current.close()
         board[current.y][current.x] = EXPLORED_CELL
-        time.sleep(STEP_TIME)
+        time.sleep(ANIMATION_STEP_TIME)
 
 
-def main(fname, Nodetype):
+def main(fname, Node):
     board = build_board(fname)
-    Nodetype.board = board
-    astar(board, Nodetype)
-    Nodetype.show_opens()
+    Node.board = board
+    astar(board, Node)
+    Node.show_opens()
     print_board(board)
 
 
 if __name__ == '__main__':
+    """
+    Based on arguments, decidede what board and algorithm to use
+    """
     fname, alg = sys.argv[1:]
     if fname.split('-')[1] == '1':
         if alg == 'dijkstra':
-            Nodetype = StandardDijkstraNode
+            Node = StandardDijkstraNode
         elif alg == 'bfs':
-            Nodetype = StandardBFSNode
+            Node = StandardBFSNode
         else:
-            Nodetype = StandardNode
+            Node = StandardNode
     elif fname.split('-')[1] == '2':
         if alg == 'bfs':
-            Nodetype = CellCostBFSNode
+            Node = CellCostBFSNode
         elif alg == 'astar':
-            Nodetype = CellCostNode
+            Node = CellCostNode
         elif alg == 'dijkstra':
-            Nodetype = CellCostDijkstraNode
+            Node = CellCostDijkstraNode
     else:
         raise Exception("Don't recognize board type.")
-    main(fname, Nodetype)
+    main(fname, Node)
