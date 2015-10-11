@@ -234,10 +234,10 @@ def astar(board, Node):
             if child not in Node.closedset:
                 if child not in Node.openset:
                     child.open()
-            other = Node.get_similar(child)
-            if other is not None and other.parent is not None:
-                if current.f_value < other.parent.f_value:
-                    other.parent = current
+                else:
+                    other = Node.get_similar(child)
+                    if current.g_value + child.move_cost < other.g_value:
+                        other.parent = current
 
         current.close()
         board[current.y][current.x] = EXPLORED_CELL
