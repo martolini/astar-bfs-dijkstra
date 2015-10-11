@@ -6,7 +6,7 @@ import os
 import sys
 import time
 
-ANIMATION_STEP_TIME = 0.02
+ANIMATION_STEP_TIME = 0.2
 EXPLORED_CELL = 'X'
 RETRACED_PATH_CELL = 'O'
 OPENED_CELL = '*'
